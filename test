@@ -1,1 +1,236 @@
-test2
+import React, { useState } from "react";
+
+// Helpdesk Inbox - Single-file React component
+// - TailwindCSS is used for styling (required)
+// - Default export is a component you can drop into a CRA / Vite app
+// - Contains a mock list of tickets (replace with API calls as needed)
+
+export default function HelpdeskApp() {
+  const mockTickets = [
+    {
+      id: "TCK-1001",
+      subject: "Falha ao acessar ERP",
+      company: "Acme Corp",
+      clientName: "João Silva",
+      clientEmail: "joao.silva@acme.com",
+      time: "2025-12-08T14:32:00",
+      snippet: "Não consigo logar no ERP desde manhã, retorna erro 403...",
+      description:
+        "Ao tentar acessar o ERP, aparece erro 403. Já reiniciei máquina e limpei cache. Acontece em dois navegadores diferentes.",
+      status: "Novo",
+    },
+    {
+      id: "TCK-1002",
+      subject: "Solicitação de backup",
+      company: "Beta Ltda",
+      clientName: "Mariana Costa",
+      clientEmail: "mariana@beta.com",
+      time: "2025-12-09T09:05:00",
+      snippet: "Preciso configurar backup automático para a pasta X...",
+      description:
+        "Precisamos de backup diário às 02:00am para a pasta /dados/financeiro. Arquivos recentes devem ser mantidos 30 dias.",
+      status: "Pendente",
+    },
+    // add more mock items as needed
+  ];
+
+  const [tickets] = useState(mockTickets);
+  const [expandedId, setExpandedId] = useState(null);
+  const [openTicket, setOpenTicket] = useState(null); // ticket opened as 'Chamado'
+  const [query, setQuery] = useState("");
+
+  function toggleExpand(id) {
+    setExpandedId(prev => (prev === id ? null : id));
+  }
+
+  function openAsChamado(ticket) {
+    // This function "puxa" (extracts) client info and opens the chamado view.
+    const chamado = {
+      ticketId: ticket.id,
+      cliente: ticket.clientName,
+      email: ticket.clientEmail,
+      empresa: ticket.company,
+      assunto: ticket.subject,
+      horario: new Date(ticket.time).toLocaleString(),
+      descricao: ticket.description,
+      status: ticket.status,
+    };
+
+    setOpenTicket(chamado);
+  }
+
+  function closeChamado() {
+    setOpenTicket(null);
+  }
+
+  const filtered = tickets.filter(t => {
+    const q = query.toLowerCase();
+    return (
+      t.subject.toLowerCase().includes(q) ||
+      t.clientName.toLowerCase().includes(q) ||
+      t.company.toLowerCase().includes(q) ||
+      t.clientEmail.toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-gray-100">
+      <div className="max-w-6xl mx-auto p-6">
+        <header className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold">Helpdesk — Caixa de Entrada</h1>
+          <div className="flex items-center gap-3">
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Pesquisar assunto, cliente ou empresa"
+              className="bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm w-80"
+            />
+            <button
+              onClick={() => setQuery("")}
+              className="text-sm px-3 py-2 bg-gray-800 border border-gray-700 rounded"
+            >
+              Limpar
+            </button>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-12 gap-6">
+          {/* Inbox column */}
+          <div className="col-span-7 bg-gray-850 rounded-lg p-4 border border-gray-800">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-medium">Recebidos</h2>
+              <span className="text-sm text-gray-400">{filtered.length} items</span>
+            </div>
+
+            <ul className="space-y-2">
+              {filtered.map(ticket => (
+                <li
+                  key={ticket.id}
+                  className={`border ${expandedId === ticket.id ? "border-gray-600" : "border-gray-800"} rounded-lg bg-gray-900`}
+                >
+                  <div className="p-3 flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-sm font-semibold">
+                          {ticket.clientName.split(" ")[0][0]}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{ticket.clientName}</span>
+                            <span className="text-sm text-gray-400">• {ticket.company}</span>
+                          </div>
+                          <div className="text-sm text-gray-400">{ticket.subject}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="text-xs text-gray-400">{new Date(ticket.time).toLocaleString()}</div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleExpand(ticket.id)}
+                          className="text-sm px-3 py-1 bg-gray-800 border border-gray-700 rounded"
+                        >
+                          {expandedId === ticket.id ? "Fechar" : "Abrir"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {expandedId === ticket.id && (
+                    <div className="p-3 border-t border-gray-800 bg-gray-950 rounded-b">
+                      <p className="text-sm text-gray-300 mb-3">{ticket.description}</p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openAsChamado(ticket)}
+                          className="px-3 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-sm"
+                        >
+                          Abrir Chamado
+                        </button>
+                        <button className="px-3 py-1 rounded bg-gray-800 border border-gray-700 text-sm">
+                          Responder
+                        </button>
+                        <button className="px-3 py-1 rounded bg-gray-800 border border-gray-700 text-sm">
+                          Marcar como lido
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              ))}
+
+              {filtered.length === 0 && (
+                <li className="p-4 text-center text-sm text-gray-400">Nenhum chamado encontrado.</li>
+              )}
+            </ul>
+          </div>
+
+          {/* Right panel: details / novo chamado */}
+          <div className="col-span-5 bg-gray-850 rounded-lg p-4 border border-gray-800 min-h-[240px]">
+            {!openTicket ? (
+              <div className="text-center text-gray-400">
+                <h3 className="font-medium mb-2">Visualizador de Chamados</h3>
+                <p className="text-sm">Clique em "Abrir" em uma mensagem para puxar os dados do cliente e abrir o chamado.</p>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg">Chamado: {openTicket.ticketId}</h3>
+                    <div className="text-sm text-gray-400">Aberto: {openTicket.horario}</div>
+                  </div>
+                  <div>
+                    <button onClick={closeChamado} className="text-sm px-3 py-1 bg-gray-800 border border-gray-700 rounded">Fechar</button>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <div className="text-xs text-gray-400">Cliente</div>
+                    <div className="font-medium">{openTicket.cliente}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400">Empresa</div>
+                    <div className="font-medium">{openTicket.empresa}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400">Email</div>
+                    <div className="font-medium">{openTicket.email}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400">Assunto</div>
+                    <div className="font-medium">{openTicket.assunto}</div>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <div className="text-xs text-gray-400">Descrição</div>
+                  <div className="mt-2 p-3 bg-gray-900 rounded text-sm">{openTicket.descricao}</div>
+                </div>
+
+                <div className="mt-4 flex items-center gap-2">
+                  <button
+                    onClick={() => alert('Chamado criado! (simulação)\nDados puxados: ' + JSON.stringify(openTicket, null, 2))}
+                    className="px-4 py-2 bg-green-600 rounded text-sm font-medium"
+                  >
+                    Criar Chamado (simular)
+                  </button>
+
+                  <button
+                    onClick={() => navigator.clipboard?.writeText(JSON.stringify(openTicket))}
+                    className="px-4 py-2 bg-gray-800 border border-gray-700 rounded text-sm"
+                  >
+                    Copiar dados
+                  </button>
+                </div>
+
+              </div>
+            )}
+          </div>
+        </div>
+
+        <footer className="mt-6 text-sm text-gray-500">Dica: substitua o array de mock por chamadas à sua API (fetch/axios) para integrar com seu backend.</footer>
+      </div>
+    </div>
+  );
+}
