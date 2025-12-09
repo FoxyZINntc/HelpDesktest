@@ -24,3 +24,4 @@ export default function EmailList({ emails, selectedEmailId, onSelect }: Props) 
     </div>
   );
 }
+

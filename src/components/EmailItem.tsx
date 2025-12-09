@@ -19,3 +19,4 @@ export default function EmailItem({ email, isSelected, onClick }: Props) {
     </div>
   );
 }
+
